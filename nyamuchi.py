@@ -69,7 +69,7 @@ async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
         # f'{format_timestamp(x[2])} ~ {format_timestamp(x[3])}\n'
         f'{x[2]} ~ {x[3]}\n!!!!!frame {x[1]} {x[2]}\n!!!!!gif {x[1]} {x[2]} {x[3]}\n'
         f'{x[0]}\n'
-        f'---------------------'
+        f'--'
         for x in query.fetchall()
     ]
     print(result)
