@@ -69,13 +69,24 @@ async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
         # f'{format_timestamp(x[2])} ~ {format_timestamp(x[3])}\n'
         f'{x[2]} ~ {x[3]}\n!!!!!frame {x[1]} {x[2]}\n!!!!!gif {x[1]} {x[2]} {x[3]}\n'
         f'{x[0]}\n'
-        f'--'
+        f'-----------------'
         for x in query.fetchall()
     ]
-    print(result)
+    # print(result)
     # t = int(datetime.datetime.now().timestamp() * 1000 - start)
+
     line = '\n'
-    await ctx.send(content=f'```{line.join(result)}```\n第{page}頁\n{result.__len__()}筆結果')
+    char_count = 0
+    slice_start = 0
+    for i in range(0, len(result)):
+        r = result[i]
+        char_count += len(r)
+        if char_count > 1000:
+            await ctx.send(content=f'```{line.join(result[slice_start:i])}```\n')
+            char_count = 0
+            slice_start = i
+        pass
+    await ctx.send(content=f'```{line.join(result[slice_start:])}```\n第{page}頁\n{result.__len__()}筆結果')
     pass
 
 
