@@ -35,35 +35,45 @@ def fps(s) -> float:
     return float(fls[0]) / float(fls[1])
 
 
+def format_timestamp(n_frames: int):
+    return datetime.timedelta(seconds=float(n_frames) / 23.98)
+
+
 @bot.command()
-async def search(ctx: Context, text: str, episode: str = '*', page: int = 0, score: float = 0.3):
+async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
     if episode not in episodes_set and episode != '*':
         await ctx.send(content='集數: ' + '/'.join(episodes_list))
         return
 
     page = max(page, 0)
-    score = max(score, 0.0)
+    # score = max(score, 0.0)
     print(text)
     print(episode)
     print(page)
-    print(score)
+    # print(score)
     start = int(datetime.datetime.now().timestamp() * 1000)
     if episode == '*':
         query = db.cursor().execute(
-            "SELECT text, episode, frame FROM sentence \n"
-            "WHERE text LIKE ? AND diff_score>=? ORDER BY rowid LIMIT 20 OFFSET ?"
-            , [f'%{text}%', score, page * 20])
+            "SELECT text, episode, min(frame), max(frame) FROM sentence \n"
+            "WHERE text LIKE ? ESCAPE '\\' GROUP BY segment_id ORDER BY rowid \n"
+            "LIMIT 20 OFFSET ?"
+            , [f'%{text}%', page * 20])
     else:
         query = db.cursor().execute(
-            "SELECT text, episode, frame FROM sentence \n"
-            "WHERE episode = ? AND text LIKE ? AND diff_score>=? ORDER BY rowid LIMIT 20 OFFSET ?"
-            , [episode, f'%{text}%', score, page * 20])
+            "SELECT text, episode, min(frame), max(frame), segment_id FROM sentence \n"
+            "WHERE episode = ? AND text LIKE ? ESCAPE '\\' GROUP BY segment_id ORDER BY rowid \n"
+            "LIMIT 20 OFFSET ?"
+            , [episode, f'%{text}%', page * 20])
+
     result = [
-        f'!!!!!frame {x[1]} {x[2]}\n\n{datetime.timedelta(seconds=float(x[2]) / 23.98)}\n{x[0]}\n'
-        f'--------------------------'
+        # f'{format_timestamp(x[2])} ~ {format_timestamp(x[3])}\n'
+        f'{x[2]} ~ {x[3]}\n!!!!!frame {x[1]} {x[2]}\n!!!!!gif {x[1]} {x[2]} {x[3]}\n'
+        f'{x[0]}\n'
+        f'---------------------'
         for x in query.fetchall()
     ]
-    t = int(datetime.datetime.now().timestamp() * 1000 - start)
+    print(result)
+    # t = int(datetime.datetime.now().timestamp() * 1000 - start)
     line = '\n'
     await ctx.send(content=f'```{line.join(result)}```\n第{page}頁\n{result.__len__()}筆結果')
     pass
