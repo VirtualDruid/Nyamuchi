@@ -40,6 +40,44 @@ def format_timestamp(n_frames: int):
 
 
 @bot.command()
+async def timeline(ctx: Context, segment_id: int, span: int):
+    span = max(0, span)
+    span = min(10, span)
+    print(segment_id)
+    print(span)
+    csr = db.cursor()
+    query = csr.execute("SELECT text, episode, min(frame), max(frame), segment_id FROM sentence \n"
+                        "WHERE segment_id BETWEEN ? - ? AND ? + ? GROUP BY segment_id",
+                        [segment_id, span, segment_id, span])
+    result = [
+        # f'{format_timestamp(x[2])} ~ {format_timestamp(x[3])}\n'
+        f'{x[2]} ~ {x[3]}\n' \
+        f'!!!!!frame {x[1]} {x[2]}\n' \
+        f'!!!!!gif {x[1]} {x[2]} {x[3]}\n'
+        f'!!!!!timeline {x[4]} 3\n'
+        f'{x[0]}\n'
+        f'-----------------'
+        for x in query.fetchall()
+    ]
+    csr.close()
+
+    line = '\n'
+    char_count = 0
+    slice_start = 0
+    for i in range(0, len(result)):
+        r = result[i]
+        char_count += len(r)
+        if char_count > 1000:
+            await ctx.send(content=f'```{line.join(result[slice_start:i])}```')
+            char_count = 0
+            slice_start = i
+        pass
+    await ctx.send(content=f'```{line.join(result[slice_start:])}```第{0}頁\n{result.__len__()}筆結果')
+    pass
+    pass
+
+
+@bot.command()
 async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
     if episode not in episodes_set and episode != '*':
         await ctx.send(content='集數: ' + '/'.join(episodes_list))
@@ -51,15 +89,16 @@ async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
     print(episode)
     print(page)
     # print(score)
-    start = int(datetime.datetime.now().timestamp() * 1000)
+    # start = int(datetime.datetime.now().timestamp() * 1000)
+    csr = db.cursor()
     if episode == '*':
-        query = db.cursor().execute(
-            "SELECT text, episode, min(frame), max(frame) FROM sentence \n"
+        query = csr.execute(
+            "SELECT text, episode, min(frame), max(frame), segment_id FROM sentence \n"
             "WHERE text LIKE ? ESCAPE '\\' GROUP BY segment_id ORDER BY rowid \n"
             "LIMIT 20 OFFSET ?"
             , [f'%{text}%', page * 20])
     else:
-        query = db.cursor().execute(
+        query = csr.execute(
             "SELECT text, episode, min(frame), max(frame), segment_id FROM sentence \n"
             "WHERE episode = ? AND text LIKE ? ESCAPE '\\' GROUP BY segment_id ORDER BY rowid \n"
             "LIMIT 20 OFFSET ?"
@@ -67,13 +106,15 @@ async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
 
     result = [
         # f'{format_timestamp(x[2])} ~ {format_timestamp(x[3])}\n'
-        f'{x[2]} ~ {x[3]}\n!!!!!frame {x[1]} {x[2]}\n!!!!!gif {x[1]} {x[2]} {x[3]}\n'
+        f'{x[2]} ~ {x[3]}\n' \
+        f'!!!!!frame {x[1]} {x[2]}\n' \
+        f'!!!!!gif {x[1]} {x[2]} {x[3]}\n'
+        f'!!!!!timeline {x[4]} 3\n'
         f'{x[0]}\n'
         f'-----------------'
         for x in query.fetchall()
     ]
-    # print(result)
-    # t = int(datetime.datetime.now().timestamp() * 1000 - start)
+    csr.close()
 
     line = '\n'
     char_count = 0
@@ -81,12 +122,12 @@ async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
     for i in range(0, len(result)):
         r = result[i]
         char_count += len(r)
-        if char_count > 1000:
-            await ctx.send(content=f'```{line.join(result[slice_start:i])}```\n')
+        if char_count > 2000:
+            await ctx.send(content=f'```{line.join(result[slice_start:i])}```')
             char_count = 0
             slice_start = i
         pass
-    await ctx.send(content=f'```{line.join(result[slice_start:])}```\n第{page}頁\n{result.__len__()}筆結果')
+    await ctx.send(content=f'```{line.join(result[slice_start:])}```第{page}頁\n{result.__len__()}筆結果')
     pass
 
 
