@@ -67,7 +67,7 @@ async def timeline(ctx: Context, segment_id: int, span: int):
     for i in range(0, len(result)):
         r = result[i]
         char_count += len(r)
-        if char_count > 1000:
+        if char_count > 1500:
             await ctx.send(content=f'```{line.join(result[slice_start:i])}```')
             char_count = 0
             slice_start = i
@@ -122,7 +122,7 @@ async def search(ctx: Context, text: str, episode: str = '*', page: int = 0):
     for i in range(0, len(result)):
         r = result[i]
         char_count += len(r)
-        if char_count > 2000:
+        if char_count > 1500:
             await ctx.send(content=f'```{line.join(result[slice_start:i])}```')
             char_count = 0
             slice_start = i
