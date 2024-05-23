@@ -157,7 +157,7 @@ async def gif(ctx: Context, episode: str, start: int, end: int, saturation: floa
     if math.isnan(seek) or math.isinf(seek) or math.isnan(seek_end) or math.isinf(seek):
         await ctx.send(content='out of range')
         return
-    if start < end:
+    if start <= end:
         palettegen = ffmpeg.input(filename=f'{args.videos_dir}{filename}', ss=seek) \
             .trim(start_frame=0, end_frame=delta + 1) \
             .filter(filter_name='hue', s=saturation) \
@@ -172,7 +172,7 @@ async def gif(ctx: Context, episode: str, start: int, end: int, saturation: floa
         buffer, error = ffmpeg.filter([scale, palettegen], filter_name='paletteuse', dither='floyd_steinberg',
                                       diff_mode='rectangle') \
             .output('pipe:',
-                    vframes=delta,
+                    vframes=delta + 1,
                     format='gif',
                     vcodec='gif'
                     ) \
@@ -205,7 +205,7 @@ async def gif(ctx: Context, episode: str, start: int, end: int, saturation: floa
             .trim(start_frame=0, end_frame=delta + 1) \
             .filter(filter_name='reverse') \
             .output('pipe:',
-                    vframes=delta,
+                    vframes=delta + 1,
                     format='gif',
                     vcodec='gif'
                     ) \
