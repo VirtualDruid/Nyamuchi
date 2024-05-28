@@ -13,7 +13,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!!!!!', intents=intents)
 
-db = sqlite3.Connection('mygo.sqlite')
+db: sqlite3.Connection = None
 args = None
 episodes_set = \
     {'1-3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'}
@@ -262,6 +262,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('token')
     parser.add_argument('videos_dir')
+    parser.add_argument('db')
     args = parser.parse_args()
     # print(args.token, args.videos_dir)
     # probe = ffmpeg.probe(filename=f'{args.videos_dir}{episodes["1-3"]}')
@@ -269,4 +270,5 @@ if __name__ == "__main__":
     # print(probe)
     # timestamp = 2456 / time_base(probe['streams'][0]['r_frame_rate'])
     # print(timestamp)
+    db = sqlite3.Connection(args.db)
     bot.run(token=args.token)
